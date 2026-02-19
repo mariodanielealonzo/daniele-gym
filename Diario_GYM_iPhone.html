@@ -35,12 +35,13 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
   border-bottom:1px solid var(--border);flex-shrink:0;position:sticky;top:0;z-index:50;}
 .topbar-title{font-family:'Bebas Neue';font-size:30px;letter-spacing:3px;color:var(--lun);}
 .topbar-sub{font-size:11px;color:var(--text-dim);letter-spacing:.5px;margin-top:1px;}
-.sync-row{display:flex;align-items:center;gap:5px;}
-.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text-dim);transition:background .4s;}
-.sync-dot.syncing{background:var(--lun);animation:pulse 1s infinite;}
-.sync-dot.ok{background:var(--green);}
-.sync-dot.err{background:var(--red);}
-.sync-lbl{font-size:10px;color:var(--text-dim);}
+.sync-row{display:flex;align-items:center;gap:8px;}
+.sync-dot{width:56px;height:56px;border-radius:10px;background:#fff;transition:all .2s;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;border:2px solid transparent;padding-top:6px}
+.sync-dot img{width:84%;height:84%;object-fit:contain;display:block}
+.sync-dot.syncing{border-color:var(--lun);}
+.sync-dot.ok{border-color:var(--green);}
+.sync-dot.err{border-color:var(--red);}
+.sync-lbl{font-size:12px;color:var(--text-dim);}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
 /* TAB BAR */
@@ -248,7 +249,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
       <div class="topbar-sub">Polisportiva NIR</div>
     </div>
     <div class="sync-row">
-      <div class="sync-dot" id="sdot"></div>
+      <div class="sync-dot" id="sdot"><img id="brand-img" src="https://m.media-amazon.com/images/I/51V+cokm09L._AC_UF1000,1000_QL80_.jpg" alt="Woodstock"></div>
       <span class="sync-lbl" id="slbl"></span>
     </div>
   </div>
@@ -276,7 +277,6 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
     <button class="back-btn" onclick="goBack()">←</button>
     <div class="wk-info">
       <div class="wk-date-lbl" id="wk-date"></div>
-      <div class="wk-day-lbl" id="wk-day"></div>
     </div>
     <div class="wk-badge" id="wk-badge"></div>
   </div>
@@ -560,7 +560,7 @@ async function openDay(ds,dayType){
   const dn=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
   document.getElementById('wk-date').textContent=
     `${dn[d.getDay()]} ${d.getDate()} ${MI[d.getMonth()]} ${d.getFullYear()}`;
-  document.getElementById('wk-day').textContent=dayType;
+  // removed displaying weekday label here (duplicate of badge on the right)
   const col=CLR[dayType], badge=document.getElementById('wk-badge');
   badge.textContent=dayType;
   badge.style.cssText=`background:${col}22;color:${col};border:1px solid ${col}44;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;`;
