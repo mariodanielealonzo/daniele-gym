@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daniele GYM">
+<title>Daniele – GYM</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c0c0e; --surface:#16161a; --surface2:#1e1e24; --surface3:#252530;
+  --border:#2a2a35; --text:#f2efe9; --text-dim:#6b6878; --text-mid:#a09daa;
+  --lun:#f5c842; --mer:#e8587a; --ven:#9b72e8; --green:#43c47a; --red:#e85858;
+  --r:14px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);}
+body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direction:column;
+  height:100dvh;max-width:430px;margin:0 auto;}
+
+.screen{display:none;flex-direction:column;flex:1;overflow:hidden;padding-top:0;}
+.screen.active{display:flex;}
+.scroll-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  padding-bottom:calc(var(--safe-bot) + 90px);}
+.scroll-body::-webkit-scrollbar{display:none;}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:calc(var(--safe-top) + 14px) 20px 14px;
+  background:rgba(12,12,14,0.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);flex-shrink:0;position:sticky;top:0;z-index:50;}
+.topbar-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:3px;color:var(--lun);}
+.topbar-sub{font-size:11px;color:var(--text-dim);letter-spacing:.5px;margin-top:1px;}
+.sync-row{display:flex;align-items:center;gap:5px;}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text-dim);transition:background .4s;}
+.sync-dot.syncing{background:var(--lun);animation:pulse 1s infinite;}
+.sync-dot.ok{background:var(--green);}
+.sync-dot.err{background:var(--red);}
+.sync-lbl{font-size:10px;color:var(--text-dim);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* TAB BAR */
+.tabbar{display:flex;background:rgba(12,12,14,0.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);padding-bottom:var(--safe-bot);
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:430px;z-index:100;}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:10px 4px 8px;cursor:pointer;gap:3px;border:none;background:none;}
+.tab-icon{font-size:22px;line-height:1;transition:transform .15s;}
+.tab-label{font-size:10px;font-weight:500;color:var(--text-dim);letter-spacing:.5px;text-transform:uppercase;}
+.tab.active .tab-label{color:var(--lun);}
+.tab.active .tab-icon{transform:scale(1.12);}
+
+/* CALENDAR */
+.cal-month-nav{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 10px;}
+.cal-month-name{font-family:'Bebas Neue';font-size:28px;letter-spacing:2px;}
+.cal-arrows{display:flex;gap:8px;}
+.cal-arrow{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  width:36px;height:36px;border-radius:10px;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;}
+.cal-arrow:active{background:var(--surface3);}
+.cal-legend{display:flex;gap:14px;padding:0 20px 12px;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);}
+.leg-dot{width:8px;height:8px;border-radius:50%;}
+.cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);padding:0 10px;gap:3px;margin-bottom:4px;}
+.cal-dow{text-align:center;font-size:10px;font-weight:600;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;padding:4px 0;}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);padding:0 10px;gap:3px;}
+.cal-cell{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;font-size:14px;font-weight:500;gap:3px;border:1px solid transparent;transition:all .15s;}
+.cal-cell.tap{cursor:pointer;background:var(--surface);}
+.cal-cell.tap:active{transform:scale(.91);}
+.cal-cell.empty,.cal-cell.off{opacity:.18;font-size:13px;}
+.cal-cell.today{border-color:var(--lun)!important;}
+.cal-cell.d-lun{background:rgba(245,200,66,.13);border-color:rgba(245,200,66,.4);}
+.cal-cell.d-mer{background:rgba(232,88,122,.13);border-color:rgba(232,88,122,.4);}
+.cal-cell.d-ven{background:rgba(155,114,232,.13);border-color:rgba(155,114,232,.4);}
+.cdot{width:5px;height:5px;border-radius:50%;}
+.d-lun .cdot{background:var(--lun);}
+.d-mer .cdot{background:var(--mer);}
+.d-ven .cdot{background:var(--ven);}
+
+/* WORKOUT TOPBAR */
+.wk-topbar{display:flex;align-items:center;gap:12px;
+  padding:calc(var(--safe-top) + 12px) 16px 12px;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+  background:rgba(12,12,14,0.97);backdrop-filter:blur(20px);}
+.back-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text-mid);
+  width:36px;height:36px;border-radius:10px;font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.back-btn:active{background:var(--surface3);}
+.wk-info{flex:1;min-width:0;}
+.wk-date-lbl{font-family:'DM Mono';font-size:11px;color:var(--text-dim);}
+.wk-day-lbl{font-weight:600;font-size:16px;}
+.wk-badge{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.8px;flex-shrink:0;}
+
+/* EXERCISE CARDS */
+.group-lbl{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--text-dim);padding:16px 16px 6px;}
+.ex-card{margin:0 12px 8px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;transition:border-color .2s;}
+.ex-hdr{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;}
+.ex-img{width:52px;height:52px;border-radius:10px;object-fit:cover;
+  background:var(--surface2);flex-shrink:0;border:1px solid var(--border);}
+.ex-img-ph{width:52px;height:52px;border-radius:10px;background:var(--surface2);
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  font-size:22px;flex-shrink:0;color:var(--text-dim);}
+.ex-meta{flex:1;min-width:0;}
+.ex-name{font-weight:600;font-size:14px;line-height:1.3;}
+.ex-schema{font-family:'DM Mono';font-size:11px;color:var(--text-dim);margin-top:3px;display:flex;gap:8px;}
+.ex-chips{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;}
+.ex-chip{font-family:'DM Mono';font-size:10px;background:rgba(67,196,122,.15);color:var(--green);
+  border:1px solid rgba(67,196,122,.3);padding:2px 6px;border-radius:4px;}
+.chev{color:var(--text-dim);font-size:11px;transition:transform .2s;flex-shrink:0;}
+.ex-card.open .chev{transform:rotate(180deg);}
+.ex-body{display:none;border-top:1px solid var(--border);padding:14px;}
+.ex-card.open .ex-body{display:block;}
+
+.ex-big-img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;
+  margin-bottom:14px;background:var(--surface2);cursor:pointer;display:block;}
+.ex-big-img.gone{display:none;}
+
+.sr-hdr{display:grid;grid-template-columns:44px 1fr 1fr;gap:8px;margin-bottom:6px;
+  padding-bottom:6px;border-bottom:1px solid var(--border);}
+.sr-hdr span{font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);text-align:center;}
+.sr-row{display:grid;grid-template-columns:44px 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px;}
+.sr-lbl{font-family:'DM Mono';font-size:11px;color:var(--text-dim);text-align:center;}
+.sr-in{background:var(--surface2);border:1.5px solid var(--border);color:var(--text);
+  font-family:'DM Mono';font-size:16px;padding:10px;border-radius:10px;width:100%;text-align:center;
+  -moz-appearance:textfield;-webkit-appearance:none;transition:border-color .2s;}
+.sr-in::-webkit-outer-spin-button,.sr-in::-webkit-inner-spin-button{-webkit-appearance:none;}
+.sr-in:focus{outline:none;border-color:var(--lun);background:var(--surface3);}
+.sr-in.v{border-color:rgba(67,196,122,.5);color:var(--green);}
+.sr-in::placeholder{color:var(--text-dim);font-size:12px;}
+.note-in{background:var(--surface2);border:1.5px solid var(--border);color:var(--text-mid);
+  font-family:'DM Sans';font-size:14px;padding:10px 12px;border-radius:10px;width:100%;margin-top:6px;}
+.note-in:focus{outline:none;border-color:var(--text-dim);color:var(--text);}
+.note-in::placeholder{color:var(--text-dim);font-style:italic;font-size:13px;}
+
+/* SAVE */
+.save-wrap{padding:16px;}
+.save-btn{width:100%;padding:17px;background:var(--green);border:none;border-radius:14px;
+  color:#fff;font-family:'DM Sans';font-size:16px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  box-shadow:0 6px 24px rgba(67,196,122,.3);transition:all .2s;}
+.save-btn:active{transform:scale(.97);}
+.save-btn.done{background:var(--surface2);color:var(--text-dim);box-shadow:none;border:1px solid var(--border);}
+.save-btn:disabled{opacity:.5;}
+
+/* STORICO */
+.sto-top{padding:14px 16px 8px;}
+.f-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;}
+.f-row::-webkit-scrollbar{display:none;}
+.fbtn{flex-shrink:0;background:var(--surface);border:1px solid var(--border);color:var(--text-dim);
+  padding:7px 16px;border-radius:20px;font-family:'DM Sans';font-size:13px;cursor:pointer;white-space:nowrap;}
+.fbtn:active{transform:scale(.95);}
+.fbtn.al{background:var(--text);color:var(--bg);border-color:var(--text);}
+.fbtn.alun{background:var(--lun);color:#111;border-color:var(--lun);}
+.fbtn.amer{background:var(--mer);color:#fff;border-color:var(--mer);}
+.fbtn.aven{background:var(--ven);color:#fff;border-color:var(--ven);}
+.srch-wrap{padding:0 16px 12px;}
+.srch{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);
+  padding:11px 16px;border-radius:12px;font-family:'DM Sans';font-size:15px;}
+.srch:focus{outline:none;border-color:var(--text-dim);}
+.srch::placeholder{color:var(--text-dim);}
+.s-card{margin:0 12px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.s-hdr{display:flex;align-items:center;gap:10px;padding:14px;cursor:pointer;}
+.s-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.s-info{flex:1;}
+.s-date{font-family:'DM Mono';font-size:11px;color:var(--text-dim);}
+.s-day{font-weight:600;font-size:15px;}
+.s-stat{font-size:11px;color:var(--text-dim);}
+.s-del{background:none;border:none;color:var(--text-dim);font-size:18px;padding:4px;cursor:pointer;line-height:1;}
+.s-del:active{color:var(--red);}
+.s-body{display:none;border-top:1px solid var(--border);padding:12px 14px;}
+.s-card.open .s-body{display:block;}
+.s-ex{padding:7px 0;border-bottom:1px solid var(--border);}
+.s-ex:last-child{border-bottom:none;padding-bottom:0;}
+.s-ex-name{font-weight:500;font-size:13px;margin-bottom:5px;}
+.s-chips{display:flex;gap:4px;flex-wrap:wrap;}
+.chip{font-family:'DM Mono';font-size:11px;background:var(--surface2);border:1px solid var(--border);
+  padding:2px 7px;border-radius:5px;color:var(--text-mid);}
+.chip.k{color:var(--green);border-color:rgba(67,196,122,.3);background:rgba(67,196,122,.08);}
+
+/* PROGRESSI */
+.prog-sec{margin-bottom:24px;}
+.prog-sec-title{font-family:'Bebas Neue';font-size:24px;letter-spacing:2px;padding:16px 16px 10px;}
+.prog-cards{padding:0 12px;display:flex;flex-direction:column;gap:8px;}
+.prog-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 16px;display:flex;align-items:center;gap:14px;}
+.p-img{width:48px;height:48px;border-radius:8px;object-fit:cover;background:var(--surface2);
+  flex-shrink:0;border:1px solid var(--border);cursor:pointer;}
+.p-img-ph{width:48px;height:48px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.p-info{flex:1;min-width:0;}
+.p-name{font-weight:600;font-size:13px;line-height:1.3;margin-bottom:2px;}
+.p-group{font-size:10px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.p-bar-wrap{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;}
+.p-bar{height:100%;border-radius:2px;width:0;transition:width .9s cubic-bezier(.4,0,.2,1);}
+.p-sessions{font-size:10px;color:var(--text-dim);margin-top:4px;}
+.p-max{text-align:right;flex-shrink:0;}
+.p-max-val{font-family:'Bebas Neue';font-size:30px;line-height:1;}
+.p-max-unit{font-size:10px;color:var(--text-dim);}
+
+/* LOADING / EMPTY */
+.loading{display:flex;align-items:center;justify-content:center;padding:50px 20px;gap:10px;color:var(--text-dim);font-size:14px;}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--lun);
+  border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:60px 24px;color:var(--text-dim);}
+.empty-icon{font-size:50px;margin-bottom:14px;}
+.empty h3{font-size:17px;color:var(--text-mid);margin-bottom:8px;}
+.empty p{font-size:13px;line-height:1.7;}
+
+/* TOAST */
+.toast{position:fixed;bottom:calc(var(--safe-bot) + 92px);left:50%;
+  transform:translateX(-50%) translateY(12px);background:var(--green);color:#fff;
+  padding:12px 22px;border-radius:100px;font-size:14px;font-weight:500;
+  opacity:0;transition:all .25s;pointer-events:none;z-index:999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.e{background:var(--red);}
+
+/* IMG MODAL */
+.imodal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);
+  z-index:200;align-items:center;justify-content:center;padding:20px;}
+.imodal.open{display:flex;}
+.imodal img{max-width:100%;max-height:82dvh;border-radius:14px;object-fit:contain;}
+.imodal-close{position:absolute;top:calc(var(--safe-top) + 14px);right:16px;
+  background:var(--surface2);border:none;color:var(--text);width:40px;height:40px;
+  border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+</style>
+</head>
+<body>
+
+<!-- ═══ CALENDARIO ════════════════════════════════════════════ -->
+<div class="screen active" id="scr-cal">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">DANIELE</div>
+      <div class="topbar-sub">Polisportiva NIR · isometria 1–2s</div>
+    </div>
+    <div class="sync-row">
+      <div class="sync-dot" id="sdot"></div>
+      <span class="sync-lbl" id="slbl"></span>
+    </div>
+  </div>
+  <div class="scroll-body">
+    <div class="cal-month-nav">
+      <div class="cal-month-name" id="cal-month"></div>
+      <div class="cal-arrows">
+        <button class="cal-arrow" onclick="chM(-1)">‹</button>
+        <button class="cal-arrow" onclick="chM(1)">›</button>
+      </div>
+    </div>
+    <div class="cal-legend">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--lun)"></div>Lunedì</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--mer)"></div>Mercoledì</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--ven)"></div>Venerdì</div>
+    </div>
+    <div class="cal-dow-row" id="cdows"></div>
+    <div class="cal-days" id="cdays"></div>
+  </div>
+</div>
+
+<!-- ═══ WORKOUT ═══════════════════════════════════════════════ -->
+<div class="screen" id="scr-wk">
+  <div class="wk-topbar">
+    <button class="back-btn" onclick="goBack()">←</button>
+    <div class="wk-info">
+      <div class="wk-date-lbl" id="wk-date"></div>
+      <div class="wk-day-lbl" id="wk-day"></div>
+    </div>
+    <div class="wk-badge" id="wk-badge"></div>
+  </div>
+  <div class="scroll-body" id="wk-body"></div>
+</div>
+
+<!-- ═══ STORICO ═══════════════════════════════════════════════ -->
+<div class="screen" id="scr-sto">
+  <div class="topbar"><div class="topbar-title">Storico</div></div>
+  <div class="sto-top">
+    <div class="f-row" id="frow">
+      <button class="fbtn al"   onclick="setF('all',this)">Tutti</button>
+      <button class="fbtn"      onclick="setF('Lunedì',this)">Lunedì</button>
+      <button class="fbtn"      onclick="setF('Mercoledì',this)">Mercoledì</button>
+      <button class="fbtn"      onclick="setF('Venerdì',this)">Venerdì</button>
+    </div>
+  </div>
+  <div class="srch-wrap">
+    <input class="srch" id="srch" placeholder="🔍 Cerca esercizio…" oninput="renSto()">
+  </div>
+  <div class="scroll-body" id="sto-body">
+    <div class="loading"><div class="spinner"></div>Caricamento…</div>
+  </div>
+</div>
+
+<!-- ═══ PROGRESSI ════════════════════════════════════════════ -->
+<div class="screen" id="scr-prog">
+  <div class="topbar"><div class="topbar-title">Progressi</div></div>
+  <div class="scroll-body" id="prog-body">
+    <div class="loading"><div class="spinner"></div>Caricamento…</div>
+  </div>
+</div>
+
+<!-- ═══ TAB BAR ══════════════════════════════════════════════ -->
+<div class="tabbar">
+  <button class="tab active" onclick="goTab('cal')">
+    <div class="tab-icon">🗓</div><div class="tab-label">Calendario</div>
+  </button>
+  <button class="tab" onclick="goTab('sto')">
+    <div class="tab-icon">📋</div><div class="tab-label">Storico</div>
+  </button>
+  <button class="tab" onclick="goTab('prog')">
+    <div class="tab-icon">📈</div><div class="tab-label">Progressi</div>
+  </button>
+</div>
+
+<!-- ═══ IMAGE MODAL ═══════════════════════════════════════════ -->
+<div class="imodal" id="imodal" onclick="closeImg()">
+  <button class="imodal-close">✕</button>
+  <img id="imodal-img" src="" alt="">
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══ FIREBASE SDK ══════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp }      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, setDoc, getDoc, deleteDoc, getDocs, collection }
+                               from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const app = initializeApp({
+  apiKey:            "AIzaSyB3geKD7gyubv3saKbbJOe3N8AsJWee1R8",
+  authDomain:        "daniele-gym.firebaseapp.com",
+  projectId:         "daniele-gym",
+  storageBucket:     "daniele-gym.firebasestorage.app",
+  messagingSenderId: "905037473844",
+  appId:             "1:905037473844:web:e1ea0b9010e89cfc9ac261"
+});
+const db  = getFirestore(app);
+const COL = 'sessions';
+const UID = 'daniele';
+
+// ── Sync UI ────────────────────────────────────────────────
+function syncUI(s){
+  const dot=document.getElementById('sdot'), lbl=document.getElementById('slbl');
+  dot.className='sync-dot';
+  if(s==='syncing'){dot.classList.add('syncing');lbl.textContent='Sync…';}
+  if(s==='ok')     {dot.classList.add('ok');     lbl.textContent='Salvato'; setTimeout(()=>{lbl.textContent='';dot.className='sync-dot';},3000);}
+  if(s==='err')    {dot.classList.add('err');    lbl.textContent='Offline';}
+}
+
+// ── Local cache fallback ───────────────────────────────────
+const LC={
+  g(k){try{return JSON.parse(localStorage.getItem('g_'+k)||'null');}catch{return null;}},
+  s(k,v){try{localStorage.setItem('g_'+k,JSON.stringify(v));}catch{}},
+  d(k){localStorage.removeItem('g_'+k);},
+  all(){
+    const r={};
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&k.startsWith('g_')){try{r[k.slice(2)]=JSON.parse(localStorage.getItem(k));}catch{}}
+    }
+    return r;
+  }
+};
+
+// ── Firestore ops ──────────────────────────────────────────
+window.FS={
+  async set(date,data){
+    syncUI('syncing');
+    try{
+      await setDoc(doc(db,COL,`${UID}_${date}`),{...data,uid:UID});
+      LC.s(date,data); syncUI('ok'); return true;
+    }catch(e){LC.s(date,data);syncUI('err');return false;}
+  },
+  async get(date){
+    try{
+      const sn=await getDoc(doc(db,COL,`${UID}_${date}`));
+      if(sn.exists()){const d=sn.data();LC.s(date,d);return d;}
+      return LC.g(date);
+    }catch{return LC.g(date);}
+  },
+  async del(date){
+    syncUI('syncing');
+    try{await deleteDoc(doc(db,COL,`${UID}_${date}`));LC.d(date);syncUI('ok');}
+    catch{LC.d(date);syncUI('err');}
+  },
+  async all(){
+    try{
+      const sn=await getDocs(collection(db,COL));
+      const r={};
+      sn.forEach(d=>{const v=d.data();if(v.uid===UID&&v.date){r[v.date]=v;LC.s(v.date,v);}});
+      return r;
+    }catch{return LC.all();}
+  }
+};
+
+window._fsReady=true;
+document.dispatchEvent(new Event('fsReady'));
+</script>
+
+<!-- ═══ APP LOGIC ═════════════════════════════════════════════ -->
+<script>
+// ── IMAGES ────────────────────────────────────────────────────
+const B='https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
+const IMGS={
+  'Chest Press Inclinata':        B+'Barbell_Incline_Bench_Press/images/0.jpg',
+  'Petto – Macchinario (4×12)':   B+'Lever_Chest_Press/images/0.jpg',
+  'Petto – Macchinario (3×15)':   B+'Lever_Chest_Press/images/0.jpg',
+  'Tricipiti – Cavo':             B+'Cable_Pushdown/images/0.jpg',
+  'Tricipiti – Macchinario':      B+'Lever_Tricep_Dip/images/0.jpg',
+  'Addominali (vari)':            B+'Crunch/images/0.jpg',
+  'Lat Machine – Presa Larga':    B+'Cable_Lat_Pulldown/images/0.jpg',
+  'Dorsali – Macchinario':        B+'Lever_Seated_Row/images/0.jpg',
+  'Lat Machine – Presa Stretta':  B+'Cable_Close-Grip_Pull-Down/images/0.jpg',
+  'Dorsali – Panca (Rematore)':   B+'Barbell_Bent_Over_Row/images/0.jpg',
+  'Bicipiti – Cavo Basso':        B+'Cable_Hammer_Curl/images/0.jpg',
+  'Bicipiti – Panca con Manubri': B+'Dumbbell_Preacher_Curl/images/0.jpg',
+  'Alzate Laterali':              B+'Dumbbell_Lateral_Raise/images/0.jpg',
+  'Alzate Frontali alla Panca':   B+'Dumbbell_Front_Raise/images/0.jpg',
+  'Spalle – Macchinario (Press)': B+'Lever_Shoulder_Press/images/0.jpg',
+  'Gambe – Macchinario 1':        B+'Lever_Leg_Extension/images/0.jpg',
+  'Gambe – Macchinario 2':        B+'Lever_Lying_Leg_Curl/images/0.jpg',
+  'Pressa':                       B+'Lever_Leg_Press/images/0.jpg',
+};
+const EM={PETTO:'💪',TRICIPITI:'🔱',DORSALI:'🏋',BICIPITI:'💪',SPALLE:'🔝',GAMBE:'🦵',ADDOMINALI:'🎯'};
+
+// ── WORKOUT DATA ───────────────────────────────────────────────
+const SCHED={1:'Lunedì',3:'Mercoledì',5:'Venerdì'};
+const CLR={'Lunedì':'#f5c842','Mercoledì':'#e8587a','Venerdì':'#9b72e8'};
+const MI=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+const WK={
+  'Lunedì':{groups:[
+    {n:'PETTO',ex:[
+      {name:'Chest Press Inclinata',s:4,r:12,rec:90},
+      {name:'Petto – Macchinario (4×12)',s:4,r:12,rec:90},
+      {name:'Petto – Macchinario (3×15)',s:3,r:15,rec:75},
+    ]},
+    {n:'TRICIPITI',ex:[
+      {name:'Tricipiti – Cavo',s:2,r:15,rec:60},
+      {name:'Tricipiti – Macchinario',s:3,r:12,rec:75},
+    ]},
+    {n:'ADDOMINALI',ex:[{name:'Addominali (vari)',s:4,r:15,rec:60}]},
+  ]},
+  'Mercoledì':{groups:[
+    {n:'DORSALI',ex:[
+      {name:'Lat Machine – Presa Larga',s:4,r:12,rec:90},
+      {name:'Dorsali – Macchinario',s:4,r:12,rec:90},
+      {name:'Lat Machine – Presa Stretta',s:3,r:15,rec:75},
+      {name:'Dorsali – Panca (Rematore)',s:3,r:15,rec:75},
+    ]},
+    {n:'BICIPITI',ex:[
+      {name:'Bicipiti – Cavo Basso',s:3,r:12,rec:75},
+      {name:'Bicipiti – Panca con Manubri',s:2,r:15,rec:60},
+    ]},
+    {n:'ADDOMINALI',ex:[{name:'Addominali (vari)',s:4,r:15,rec:60}]},
+  ]},
+  'Venerdì':{groups:[
+    {n:'SPALLE',ex:[
+      {name:'Alzate Laterali',s:3,r:15,rec:60},
+      {name:'Alzate Frontali alla Panca',s:3,r:15,rec:60},
+      {name:'Spalle – Macchinario (Press)',s:3,r:15,rec:75},
+    ]},
+    {n:'GAMBE',ex:[
+      {name:'Gambe – Macchinario 1',s:4,r:12,rec:90},
+      {name:'Gambe – Macchinario 2',s:4,r:12,rec:90},
+      {name:'Pressa',s:4,r:12,rec:120},
+    ]},
+    {n:'ADDOMINALI',ex:[{name:'Addominali (vari)',s:4,r:15,rec:60}]},
+  ]},
+};
+
+// ── STATE ──────────────────────────────────────────────────────
+let CY=new Date().getFullYear(), CM=new Date().getMonth();
+let cache={}, curDate='', curDay='', activeFilt='all';
+
+// ── SYNC HELPERS ───────────────────────────────────────────────
+async function fsAll(){cache=await window.FS.all();return cache;}
+
+// ── NAVIGATION ────────────────────────────────────────────────
+function goTab(t){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('scr-'+t).classList.add('active');
+  document.querySelectorAll('.tab')[['cal','sto','prog'].indexOf(t)]?.classList.add('active');
+  if(t==='cal')  loadCal();
+  if(t==='sto')  loadSto();
+  if(t==='prog') loadProg();
+}
+function goBack(){
+  document.getElementById('scr-wk').classList.remove('active');
+  document.getElementById('scr-cal').classList.add('active');
+  loadCal();
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────
+function chM(d){CM+=d;if(CM>11){CM=0;CY++;}if(CM<0){CM=11;CY--;}renCal();}
+async function loadCal(){cache=await window.FS.all();renCal();}
+function renCal(){
+  document.getElementById('cal-month').textContent=`${MI[CM]} ${CY}`;
+  document.getElementById('cdows').innerHTML=
+    ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const today=new Date().toISOString().slice(0,10);
+  const first=new Date(CY,CM,1), last=new Date(CY,CM+1,0).getDate();
+  let dow=first.getDay(); dow=dow===0?6:dow-1;
+  let h='';
+  for(let i=0;i<dow;i++) h+='<div class="cal-cell empty"></div>';
+  for(let d=1;d<=last;d++){
+    const dt=new Date(CY,CM,d), ds=dt.toISOString().slice(0,10), dw=dt.getDay();
+    const wd=SCHED[dw], ses=cache[ds], isT=ds===today;
+    let cls='cal-cell'+(wd?' tap':' off')+(isT?' today':'');
+    let dot='';
+    if(ses){
+      const map={'Lunedì':'lun','Mercoledì':'mer','Venerdì':'ven'};
+      const c=map[ses.dayType];
+      if(c){cls+=` d-${c}`;dot='<div class="cdot"></div>';}
+    }
+    h+=`<div class="${cls}" ${wd?`onclick="openDay('${ds}','${wd}')"`:''}><span>${d}</span>${dot}</div>`;
+  }
+  document.getElementById('cdays').innerHTML=h;
+}
+
+// ── WORKOUT ────────────────────────────────────────────────────
+async function openDay(ds,dayType){
+  curDate=ds; curDay=dayType;
+  const d=new Date(ds+'T12:00:00');
+  const dn=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  document.getElementById('wk-date').textContent=
+    `${dn[d.getDay()]} ${d.getDate()} ${MI[d.getMonth()]} ${d.getFullYear()}`;
+  document.getElementById('wk-day').textContent=dayType;
+  const col=CLR[dayType], badge=document.getElementById('wk-badge');
+  badge.textContent=dayType;
+  badge.style.cssText=`background:${col}22;color:${col};border:1px solid ${col}44;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;`;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('scr-wk').classList.add('active');
+  document.getElementById('wk-body').innerHTML='<div class="loading"><div class="spinner"></div>Caricamento…</div>';
+  const ses=await window.FS.get(ds);
+  buildWk(dayType,ses);
+}
+
+function buildWk(dayType,ses){
+  const wk=WK[dayType];
+  let h='';
+  wk.groups.forEach(g=>{
+    h+=`<div class="group-lbl">${EM[g.n]||''} ${g.n}</div>`;
+    g.ex.forEach((ex,ei)=>{
+      const eid=`${g.n}_${ei}`;
+      const sx=ses?.exercises?.find(e=>e.name===ex.name);
+      const filled=sx?.series?.filter(s=>s.kg!==''&&s.kg!==undefined)||[];
+      const chips=filled.map(s=>`<div class="ex-chip">S${s.n}: ${s.kg}kg</div>`).join('');
+      const img=IMGS[ex.name]||'';
+      const iTag=img
+        ?`<img class="ex-img" src="${img}" alt=""
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+            onclick="event.stopPropagation();openImg('${img}')">`
+          +`<div class="ex-img-ph" style="display:none">${EM[g.n]||'💪'}</div>`
+        :`<div class="ex-img-ph">${EM[g.n]||'💪'}</div>`;
+      h+=`<div class="ex-card" id="ec_${eid}">
+        <div class="ex-hdr" onclick="togC('${eid}')">
+          ${iTag}
+          <div class="ex-meta">
+            <div class="ex-name">${ex.name}</div>
+            <div class="ex-schema"><span>${ex.s}×${ex.r}</span><span>⏱${ex.rec}s</span></div>
+            ${chips?`<div class="ex-chips">${chips}</div>`:''}
+          </div>
+          <div class="chev">▼</div>
+        </div>
+        <div class="ex-body">`;
+      if(img) h+=`<img class="ex-big-img" src="${img}" alt=""
+        onclick="openImg('${img}')" onerror="this.classList.add('gone')">`;
+      h+=`<div class="sr-hdr"><span></span><span>KG</span><span>REC (s)</span></div>`;
+      for(let s=1;s<=ex.s;s++){
+        const sv=sx?.series?.find(r=>r.n===s);
+        const kg=sv?.kg??'', rec=sv?.rec??ex.rec;
+        h+=`<div class="sr-row">
+          <div class="sr-lbl">S${s}</div>
+          <input type="number" inputmode="decimal" step="0.5" min="0" max="999"
+            class="sr-in${kg!==''?' v':''}" id="k_${eid}_${s}" value="${kg}"
+            placeholder="kg" oninput="onK(this)">
+          <input type="number" inputmode="numeric" step="1" min="0" max="600"
+            class="sr-in" id="r_${eid}_${s}" value="${rec}" placeholder="${ex.rec}">
+        </div>`;
+      }
+      const note=sx?.note??'';
+      h+=`<input type="text" class="note-in" id="n_${eid}"
+        placeholder="Note esercizio…" value="${note.replace(/"/g,'&quot;')}">
+        </div></div>`;
+    });
+  });
+  h+=`<div class="save-wrap">
+    <button class="save-btn" id="sbtn" onclick="saveWk()">
+      <span>${ses?'✏️':'💾'}</span>${ses?'Aggiorna allenamento':'Salva allenamento'}
+    </button>
+  </div>`;
+  document.getElementById('wk-body').innerHTML=h;
+  document.getElementById('wk-body').scrollTop=0;
+  wk.groups.forEach(g=>togC(`${g.n}_0`,true));
+}
+
+function togC(eid,fo=false){
+  const c=document.getElementById(`ec_${eid}`);
+  if(c) fo?c.classList.add('open'):c.classList.toggle('open');
+}
+function onK(i){i.classList.toggle('v',i.value!=='');}
+
+async function saveWk(){
+  const btn=document.getElementById('sbtn');
+  btn.disabled=true;
+  btn.innerHTML='<div class="spinner"></div>Salvataggio…';
+  const wk=WK[curDay], exs=[];
+  wk.groups.forEach(g=>{
+    g.ex.forEach((ex,ei)=>{
+      const eid=`${g.n}_${ei}`, srs=[];
+      for(let s=1;s<=ex.s;s++){
+        const kg=document.getElementById(`k_${eid}_${s}`)?.value||'';
+        const rc=document.getElementById(`r_${eid}_${s}`)?.value||ex.rec;
+        srs.push({n:s,kg:kg!==''?parseFloat(kg)||'':'',rec:parseInt(rc)||ex.rec});
+      }
+      exs.push({group:g.n,name:ex.name,series:srs,note:document.getElementById(`n_${eid}`)?.value?.trim()||''});
+    });
+  });
+  const payload={date:curDate,dayType:curDay,savedAt:new Date().toISOString(),exercises:exs};
+  const ok=await window.FS.set(curDate,payload);
+  cache[curDate]=payload;
+  btn.disabled=false;
+  if(ok){
+    btn.classList.add('done'); btn.innerHTML='✅ Salvato!';
+    toast('Allenamento salvato! 💪');
+    setTimeout(()=>{btn.classList.remove('done');btn.innerHTML='<span>✏️</span> Aggiorna allenamento';},2200);
+  } else {
+    btn.innerHTML='<span>✏️</span> Aggiorna allenamento';
+    toast('Salvato in locale (offline)',true);
+  }
+}
+
+// ── STORICO ────────────────────────────────────────────────────
+async function loadSto(){
+  document.getElementById('sto-body').innerHTML='<div class="loading"><div class="spinner"></div>Caricamento…</div>';
+  cache=await window.FS.all(); renSto();
+}
+function setF(f,el){
+  activeFilt=f;
+  document.querySelectorAll('.fbtn').forEach(b=>b.className='fbtn');
+  const m={'all':'al','Lunedì':'alun','Mercoledì':'amer','Venerdì':'aven'};
+  el.classList.add(m[f]||'al');
+  renSto();
+}
+function renSto(){
+  const q=(document.getElementById('srch')?.value||'').toLowerCase();
+  const body=document.getElementById('sto-body');
+  const dn=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  const list=Object.values(cache)
+    .filter(s=>activeFilt==='all'||s.dayType===activeFilt)
+    .filter(s=>!q||s.exercises?.some(e=>e.name.toLowerCase().includes(q)))
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  if(!list.length){
+    body.innerHTML=`<div class="empty"><div class="empty-icon">📋</div>
+      <h3>Nessun allenamento</h3><p>Tocca un giorno del calendario<br>per registrare.</p></div>`;
+    return;
+  }
+  body.innerHTML=list.map(s=>{
+    const d=new Date(s.date+'T12:00:00');
+    const ds=`${dn[d.getDay()]} ${d.getDate()} ${MI[d.getMonth()]} ${d.getFullYear()}`;
+    const col=CLR[s.dayType]||'#888';
+    const tot=s.exercises?.reduce((a,e)=>a+e.series.reduce((b,r)=>b+(parseFloat(r.kg)||0),0),0)||0;
+    const rows=s.exercises?.map(e=>{
+      const chips=e.series.map(r=>{
+        const hk=r.kg!==''&&r.kg!==undefined;
+        return `<span class="chip${hk?' k':''}">${r.n}: ${hk?r.kg+'kg':'–'}</span>`;
+      }).join('');
+      return `<div class="s-ex"><div class="s-ex-name">${e.name}</div>
+        <div class="s-chips">${chips}</div>
+        ${e.note?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px">📝 ${e.note}</div>`:''}
+      </div>`;
+    }).join('')||'';
+    return `<div class="s-card" id="sc_${s.date}">
+      <div class="s-hdr" onclick="togS('${s.date}')">
+        <div class="s-dot" style="background:${col}"></div>
+        <div class="s-info"><div class="s-date">${ds}</div><div class="s-day">${s.dayType}</div></div>
+        <div class="s-stat">${tot>0?tot+'kg':s.exercises?.length+' es.'}</div>
+        <button class="s-del" onclick="event.stopPropagation();delS('${s.date}')">🗑</button>
+      </div>
+      <div class="s-body">${rows}</div>
+    </div>`;
+  }).join('');
+}
+function togS(ds){document.getElementById(`sc_${ds}`)?.classList.toggle('open');}
+async function delS(ds){
+  if(!confirm('Eliminare questo allenamento?'))return;
+  await window.FS.del(ds);
+  delete cache[ds]; renSto(); renCal();
+  toast('Eliminato');
+}
+
+// ── PROGRESSI ──────────────────────────────────────────────────
+async function loadProg(){
+  document.getElementById('prog-body').innerHTML='<div class="loading"><div class="spinner"></div>Caricamento…</div>';
+  cache=await window.FS.all(); renProg();
+}
+function renProg(){
+  const body=document.getElementById('prog-body');
+  const stats={};
+  Object.values(cache).forEach(s=>{
+    s.exercises?.forEach(e=>{
+      if(!stats[e.name])stats[e.name]={max:0,cnt:0,group:e.group,day:s.dayType};
+      stats[e.name].cnt++;
+      e.series.forEach(r=>{const kg=parseFloat(r.kg)||0;if(kg>stats[e.name].max)stats[e.name].max=kg;});
+    });
+  });
+  if(!Object.keys(stats).length){
+    body.innerHTML=`<div class="empty" style="margin-top:20px"><div class="empty-icon">📈</div>
+      <h3>Ancora nessun dato</h3><p>Registra i tuoi allenamenti<br>per vedere i progressi.</p></div>`;
+    return;
+  }
+  const ovMax=Math.max(...Object.values(stats).map(s=>s.max),1);
+  let h='';
+  ['Lunedì','Mercoledì','Venerdì'].forEach(day=>{
+    const col=CLR[day];
+    const exs=WK[day].groups.flatMap(g=>g.ex.map(e=>({...e,grp:g.n}))).filter(e=>stats[e.name]);
+    if(!exs.length)return;
+    h+=`<div class="prog-sec"><div class="prog-sec-title" style="color:${col}">${day}</div>
+      <div class="prog-cards">`;
+    exs.forEach(ex=>{
+      const st=stats[ex.name], pct=Math.round((st.max/ovMax)*100);
+      const img=IMGS[ex.name]||'';
+      const iEl=img
+        ?`<img class="p-img" src="${img}" alt="" onclick="openImg('${img}')"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          +`<div class="p-img-ph" style="display:none">${EM[ex.grp]||'💪'}</div>`
+        :`<div class="p-img-ph">${EM[ex.grp]||'💪'}</div>`;
+      h+=`<div class="prog-card">${iEl}
+        <div class="p-info">
+          <div class="p-name">${ex.name}</div>
+          <div class="p-group">${ex.grp}</div>
+          <div class="p-bar-wrap"><div class="p-bar" style="background:${col}" data-w="${pct}"></div></div>
+          <div class="p-sessions">${st.cnt} session${st.cnt===1?'e':'i'}</div>
+        </div>
+        <div class="p-max" style="color:${col}">
+          <div class="p-max-val">${st.max||'–'}</div>
+          <div class="p-max-unit">${st.max?'kg max':''}</div>
+        </div>
+      </div>`;
+    });
+    h+=`</div></div>`;
+  });
+  body.innerHTML=h;
+  setTimeout(()=>document.querySelectorAll('.p-bar[data-w]').forEach(b=>b.style.width=b.dataset.w+'%'),80);
+}
+
+// ── IMAGE MODAL ────────────────────────────────────────────────
+function openImg(u){document.getElementById('imodal-img').src=u;document.getElementById('imodal').classList.add('open');}
+function closeImg(){document.getElementById('imodal').classList.remove('open');}
+
+// ── TOAST ──────────────────────────────────────────────────────
+function toast(m,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=m;t.className='toast show'+(err?' e':'');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+function init(){loadCal();}
+if(window._fsReady)init();
+else document.addEventListener('fsReady',init);
+</script>
+</body>
+</html>
