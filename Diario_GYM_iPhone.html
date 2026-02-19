@@ -69,11 +69,16 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
 .cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);padding:0 10px;gap:3px;margin-bottom:4px;}
 .cal-dow{text-align:center;font-size:10px;font-weight:600;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;padding:4px 0;}
 .cal-days{display:grid;grid-template-columns:repeat(7,1fr);padding:0 10px;gap:3px;}
-.cal-cell{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;font-size:14px;font-weight:500;gap:3px;border:1px solid transparent;transition:all .15s;}
+.cal-cell{border-radius:10px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;font-size:14px;font-weight:500;gap:3px;border:1px solid transparent;transition:all .15s;min-height:32px;padding:6px 4px;}
 .cal-cell.tap{cursor:pointer;background:var(--surface);}
 .cal-cell.tap:active{transform:scale(.91);}
-.cal-cell.empty,.cal-cell.off{opacity:.18;font-size:13px;}
+.cal-cell.empty{font-size:13px;border:1px solid transparent;background:transparent;color:var(--text-dim);} 
+.cal-cell.off{font-size:13px;color:var(--text-dim);border:1px solid var(--border);background:transparent;}
+
+.cal-cell span{color:inherit;display:block}
+.cal-cell.empty span{opacity:.45}
+.cal-cell.off span{opacity:.9}
 .cal-cell.today{border-color:var(--lun)!important;}
 .cal-cell.d-lun{background:rgba(245,200,66,.13);border-color:rgba(245,200,66,.4);}
 .cal-cell.d-mer{background:rgba(232,88,122,.13);border-color:rgba(232,88,122,.4);}
@@ -478,6 +483,11 @@ const WK={
 let CY=new Date().getFullYear(), CM=new Date().getMonth();
 let cache={}, curDate='', curDay='', activeFilt='all';
 
+// format date as local YYYY-MM-DD (avoid toISOString timezone shifts)
+function fmtYMD(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 // ── SYNC HELPERS ───────────────────────────────────────────────
 async function fsAll(){cache=await window.FS.all();return cache;}
 
@@ -504,13 +514,13 @@ function renCal(){
   document.getElementById('cal-month').textContent=`${MI[CM]} ${CY}`;
   document.getElementById('cdows').innerHTML=
     ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
-  const today=new Date().toISOString().slice(0,10);
+  const today=fmtYMD(new Date());
   const first=new Date(CY,CM,1), last=new Date(CY,CM+1,0).getDate();
   let dow=first.getDay(); dow=dow===0?6:dow-1;
   let h='';
   for(let i=0;i<dow;i++) h+='<div class="cal-cell empty"></div>';
   for(let d=1;d<=last;d++){
-    const dt=new Date(CY,CM,d), ds=dt.toISOString().slice(0,10), dw=dt.getDay();
+    const dt=new Date(CY,CM,d), ds=fmtYMD(dt), dw=dt.getDay();
     const wd=SCHED[dw], ses=cache[ds], isT=ds===today;
     let cls='cal-cell'+(wd?' tap':' off')+(isT?' today':'');
     let dot='';
@@ -521,7 +531,26 @@ function renCal(){
     }
     h+=`<div class="${cls}" ${wd?`onclick="openDay('${ds}','${wd}')"`:''}><span>${d}</span>${dot}</div>`;
   }
-  document.getElementById('cdays').innerHTML=h;
+  // fill trailing empty cells so the month grid is complete (like June)
+  const tiles = dow + last;
+  const trail = (7 - (tiles % 7)) % 7;
+  for(let i=0;i<trail;i++) h+='<div class="cal-cell empty"></div>';
+  const cdays = document.getElementById('cdays');
+  cdays.innerHTML=h;
+  // calculate available height for calendar grid and set uniform row height so all dates fit on screen
+  try{
+    const rows = Math.max(1, Math.ceil((dow + last)/7));
+    const topbarH = document.querySelector('.topbar')?.offsetHeight||0;
+    const monthNavH = document.querySelector('.cal-month-nav')?.offsetHeight||0;
+    const legendH = document.querySelector('.cal-legend')?.offsetHeight||0;
+    const dowH = document.querySelector('.cal-dow-row')?.offsetHeight||0;
+    const tabH = document.querySelector('.tabbar')?.offsetHeight||0;
+    const safeBot = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-bot'))||0;
+    const available = window.innerHeight - (topbarH + monthNavH + legendH + dowH + tabH) - 28; // small padding
+    const rowH = Math.max(28, Math.floor(available / rows));
+    cdays.style.gridAutoRows = rowH + 'px';
+    cdays.style.height = (rowH * rows) + 'px';
+  }catch(e){}
 }
 
 // ── WORKOUT ────────────────────────────────────────────────────
