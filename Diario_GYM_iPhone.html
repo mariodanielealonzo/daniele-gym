@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -593,7 +594,7 @@ function buildWk(dayType,ses){
           ${iTag}
           <div class="ex-meta">
             <div class="ex-name">${ex.name}</div>
-            <div class="ex-schema"><span>${ex.s}×${ex.r}</span><span>⏱${ex.rec}s</span></div>
+            <div class="ex-schema"><span>${ex.s}×${ex.r}</span></div>
             ${chips?`<div class="ex-chips">${chips}</div>`:''}
           </div>
           <div class="chev">▼</div>
@@ -601,17 +602,18 @@ function buildWk(dayType,ses){
         <div class="ex-body">`;
       if(img) h+=`<img class="ex-big-img" src="${img}" alt=""
         onclick="openImg('${img}')" onerror="this.classList.add('gone')">`;
-      h+=`<div class="sr-hdr"><span></span><span>KG</span><span>REC (s)</span></div>`;
+      h+=`<div class="sr-hdr"><span></span><span>KG</span><span>REP</span></div>`;
       for(let s=1;s<=ex.s;s++){
-        const sv=sx?.series?.find(r=>r.n===s);
-        const kg=sv?.kg??'', rec=sv?.rec??ex.rec;
+        const svset=sx?.series?.find(r=>r.n===s);
+        const kg=svset?.kg??'';
+        const rep=svset?.reps ?? svset?.rep ?? svset?.rec ?? ex.r;
         h+=`<div class="sr-row">
           <div class="sr-lbl">S${s}</div>
           <input type="number" inputmode="decimal" step="0.5" min="0" max="999"
             class="sr-in${kg!==''?' v':''}" id="k_${eid}_${s}" value="${kg}"
             placeholder="kg" oninput="onK(this)">
-          <input type="number" inputmode="numeric" step="1" min="0" max="600"
-            class="sr-in" id="r_${eid}_${s}" value="${rec}" placeholder="${ex.rec}">
+          <input type="number" inputmode="numeric" step="1" min="1" max="999"
+            class="sr-in" id="r_${eid}_${s}" value="${rep}" placeholder="${ex.r}">
         </div>`;
       }
       const note=sx?.note??'';
@@ -646,8 +648,8 @@ async function saveWk(){
       const eid=`${g.n}_${ei}`, srs=[];
       for(let s=1;s<=ex.s;s++){
         const kg=document.getElementById(`k_${eid}_${s}`)?.value||'';
-        const rc=document.getElementById(`r_${eid}_${s}`)?.value||ex.rec;
-        srs.push({n:s,kg:kg!==''?parseFloat(kg)||'':'',rec:parseInt(rc)||ex.rec});
+        const repVal=document.getElementById(`r_${eid}_${s}`)?.value||ex.r;
+        srs.push({n:s,kg:kg!==''?parseFloat(kg)||'':'',reps:parseInt(repVal)||ex.r});
       }
       exs.push({group:g.n,name:ex.name,series:srs,note:document.getElementById(`n_${eid}`)?.value?.trim()||''});
     });
@@ -699,7 +701,10 @@ function renSto(){
     const rows=s.exercises?.map(e=>{
       const chips=e.series.map(r=>{
         const hk=r.kg!==''&&r.kg!==undefined;
-        return `<span class="chip${hk?' k':''}">${r.n}: ${hk?r.kg+'kg':'–'}</span>`;
+        const reps = r.reps ?? r.rep ?? r.rec ?? '';
+        const kgPart = hk ? `${r.kg}kg` : '–';
+        const repsPart = reps ? ` × ${reps}` : '';
+        return `<span class="chip${hk?' k':''}">${r.n}: ${kgPart}${repsPart}</span>`;
       }).join('');
       return `<div class="s-ex"><div class="s-ex-name">${e.name}</div>
         <div class="s-chips">${chips}</div>
