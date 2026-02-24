@@ -20,7 +20,7 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overflow:hidden;background:var(--bg);}
 body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direction:column;
-  height:100dvh;max-width:430px;margin:0 auto;}
+  height:100dvh;max-width:980px;margin:0 auto;padding:0 12px;}
 
 .screen{display:none;flex-direction:column;flex:1;overflow:hidden;padding-top:0;}
 .screen.active{display:flex;}
@@ -48,7 +48,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
 .tabbar{display:flex;background:rgba(12,12,14,0.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-top:1px solid var(--border);padding-bottom:var(--safe-bot);
   position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-  width:100%;max-width:430px;z-index:100;}
+  width:100%;max-width:980px;z-index:100;}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;
   padding:10px 4px 8px;cursor:pointer;gap:3px;border:none;background:none;}
 .tab-icon{font-size:22px;line-height:1;transition:transform .15s;}
@@ -237,6 +237,14 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
 .imodal-close{position:absolute;top:calc(var(--safe-top) + 14px);right:16px;
   background:var(--surface2);border:none;color:var(--text);width:40px;height:40px;
   border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+/* Desktop / larger screens tweaks */
+@media (min-width:900px){
+  body{padding:20px 24px;height:100vh;}
+  .topbar-title{font-size:36px;}
+  .cal-month-name{font-size:32px;}
+  .tabbar{bottom:18px;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.45);}
+  .scroll-body{padding-bottom:calc(var(--safe-bot) + 100px);} 
+}
 </style>
 </head>
 <body>
