@@ -245,6 +245,18 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
   .tabbar{bottom:18px;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.45);}
   .scroll-body{padding-bottom:calc(var(--safe-bot) + 100px);} 
 }
+/* Small / phone tweaks (iPhone 15 Pro ~393px width) */
+@media (max-width:420px){
+  body{max-width:430px;padding:0;margin:0 auto;height:100dvh;}
+  .topbar{padding:calc(var(--safe-top) + 10px) 12px 10px;}
+  .cal-month-nav{padding:12px 12px 8px;}
+  .cal-legend{padding:0 12px 8px;}
+  .cal-dow-row{padding:0 6px 0 6px;}
+  .cal-days{padding:0 6px 6px 6px;gap:4px}
+  .cal-cell{min-height:36px;padding:6px 4px;font-size:13px}
+  .cal-month-name{font-size:22px}
+  .tabbar{max-width:430px;padding-bottom:calc(var(--safe-bot) + 6px);}
+}
 </style>
 </head>
 <body>
@@ -553,10 +565,14 @@ function renCal(){
     const legendH = document.querySelector('.cal-legend')?.offsetHeight||0;
     const dowH = document.querySelector('.cal-dow-row')?.offsetHeight||0;
     const tabH = document.querySelector('.tabbar')?.offsetHeight||0;
-    const safeBot = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-bot'))||0;
-    const available = window.innerHeight - (topbarH + monthNavH + legendH + dowH + tabH) - 28; // small padding
-    const rowH = Math.max(28, Math.floor(available / rows));
+    // prefer visualViewport for mobile browsers (handles dynamic UI on iOS)
+    const vh = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
+    const available = vh - (topbarH + monthNavH + legendH + dowH + tabH) - 28; // small padding
+    // pick a comfortable minimum row height for touch targets
+    const minRow = 36; // px
+    const rowH = Math.max(minRow, Math.floor(available / rows));
     cdays.style.gridAutoRows = rowH + 'px';
+    // ensure explicit height to avoid layout jump on some mobile browsers
     cdays.style.height = (rowH * rows) + 'px';
   }catch(e){}
 }
